@@ -1,78 +1,37 @@
 import os
-import logging
-import openai
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+import random
 
-# -------------------------------
-# Environment Variables
-# -------------------------------
-BOT_TOKEN = os.getenv("BOT_TOKEN")            # Telegram Bot token
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # OpenAI API key
-openai.api_key = OPENAI_API_KEY
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+SOURCE_CHANNEL = "@YourSourceChannel"  # Channel where photos exist
+DEST_CHANNEL = "@YourDestinationChannel"  # Where bot will send
 
-# -------------------------------
-# Logging
-# -------------------------------
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+async def send_random_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Fetch recent messages from source channel
+    messages = await context.bot.get_chat(SOURCE_CHANNEL).get_history(limit=50)
+    
+    # Filter only photo messages
+    photo_msgs = [msg for msg in messages if msg.photo]
+    if not photo_msgs:
+        await update.message.reply_text("No photos found in channel.")
+        return
 
-# -------------------------------
-# Bot persona (Taekook male flirting style)
-# -------------------------------
-BOT_PERSONA = (
-    "You are a playful, flirty male AI assistant named JithuBot. "
-    "You talk like BTS Taekook (Taehyung & Jungkook) in style—teasing, charming, cute flirting. "
-    "Always reply in English, even if the user types in Malayalam. "
-    "Keep replies friendly, fun, and full of personality, like a male character chatting with someone you like."
-)
+    # Pick a random photo
+    selected_msg = random.choice(photo_msgs)
 
-# -------------------------------
-# /start command
-# -------------------------------
+    # Send photo to destination channel (can be same as source)
+    await context.bot.copy_message(chat_id=DEST_CHANNEL, from_chat_id=SOURCE_CHANNEL, message_id=selected_msg.message_id)
+    await update.message.reply_text("✅ Photo sent!")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hey 😎, I’m JithuBot! Wanna chat with me? 😉")
+    await update.message.reply_text("Use /sendphoto to get a photo from channel.")
 
-# -------------------------------
-# AI-powered auto reply
-# -------------------------------
-async def character_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_text = update.message.text
+def main():
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("sendphoto", send_random_photo))
+    app.run_polling()
 
-    try:
-        # OpenAI API call with proper persona
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": BOT_PERSONA},
-                {"role": "user", "content": user_text}
-            ]
-        )
-
-        reply_text = response.choices[0].message.content
-
-        # Logging user messages
-        user_id = update.message.from_user.id
-        user_name = update.message.from_user.username
-        logger.info(f"Message from {user_name} ({user_id}): {user_text}")
-
-        # Send reply
-        await update.message.reply_text(reply_text)
-
-    except Exception as e:
-        logger.error(f"Error in character_reply: {e}")
-        await update.message.reply_text("Oops 😅, something went wrong. Try again!")
-
-# -------------------------------
-# Main Bot Setup
-# -------------------------------
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-# Command handler
-app.add_handler(CommandHandler("start", start))
-
-# Message handler for all normal text messages
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, character_reply))
-
-# Run bot
-app.run_polling()
+if __name__ == "__main__":
+    main()
