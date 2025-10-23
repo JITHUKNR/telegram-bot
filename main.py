@@ -32,6 +32,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Application setup
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, character_reply))
 
 app.run_polling()
