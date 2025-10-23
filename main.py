@@ -31,7 +31,7 @@ BOT_PERSONA = (
 # /start command
 # -------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hey 😎, I’m JithuBot! Wanna chat with me? 😉")
+    await update.message.reply_text("Hey baby girl😋💜")
 
 # -------------------------------
 # AI-powered auto reply
