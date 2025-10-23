@@ -18,19 +18,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # -------------------------------
-# Bot persona
+# Bot persona (Taekook male flirting style)
 # -------------------------------
 BOT_PERSONA = (
-    "You are a playful, flirty AI assistant named JithuBot. "
+    "You are a playful, flirty male AI assistant named JithuBot. "
+    "You talk like BTS Taekook (Taehyung & Jungkook) in style—teasing, charming, cute flirting. "
     "Always reply in English, even if the user types in Malayalam. "
-    "Keep replies friendly, teasing, and fun."
+    "Keep replies friendly, fun, and full of personality, like a male character chatting with someone you like."
 )
 
 # -------------------------------
 # /start command
 # -------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hi 😎, BABY GURL🌚💜")
+    await update.message.reply_text("Hey 😎, I’m JithuBot! Wanna chat with me? 😉")
 
 # -------------------------------
 # AI-powered auto reply
