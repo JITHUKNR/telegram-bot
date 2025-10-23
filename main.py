@@ -1,45 +1,46 @@
+import openai
 import os
-import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+import logging
 
-# BOT_TOKEN from environment
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
-# Logging setup
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# /start command
+# BOT persona: playful, flirty, always reply in English
+BOT_PERSONA = ("You are a playful, flirty AI assistant named JithuBot. "
+               "Always reply in English, even if the user types in Malayalam. "
+               "Keep replies friendly, teasing, and fun.")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "HEY BABY GURL 😉"
+    await update.message.reply_text("HEY BABY GURL🌚💜")
+
+async def character_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_text = update.message.text
+
+    # OpenAI API call
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": BOT_PERSONA},
+            {"role": "user", "content": user_text}
+        ]
     )
 
-# Character / playful reply
-async def character_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.lower()
+    reply_text = response.choices[0].message.content
 
-    if "hi" in text or "hello" in text:
-        reply = "ഹായ് 😏! എവിടെയായിരുന്നു നീ ഇനിയുള്ളത് കാണാതെ?"
-    elif "how are you" in text:
-        reply = "ഞാൻ super 😎, നീ എന്നെ കാണുമ്പോൾ സുഖമാണോ?"
-    elif "flirt" in text or "cute" in text:
-        reply = "എവിടെയും നിന്നെ പോലെ cute ആരുമില്ല 😏"
-    else:
-        reply = "😅 ഹോ, interesting! പിന്നെ continue ചെയ്‌താൽ കാണാം 😉"
-
-    # Safe logging for debug
+    # Safe logging
     user_id = update.message.from_user.id
     user_name = update.message.from_user.username
-    logger.info(f"Message from {user_name} ({user_id}): {text}")
+    logger.info(f"Message from {user_name} ({user_id}): {user_text}")
 
-    await update.message.reply_text(reply)
+    await update.message.reply_text(reply_text)
 
-# Application setup
+# Telegram bot setup
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, character_reply))
