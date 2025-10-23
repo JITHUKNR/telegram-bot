@@ -21,6 +21,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def character_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": BOT_PERSONA},
+            {"role": "user", "content": user_text}
+        ]
+    )
+    reply_text = response.choices[0].message.content
+    await update.message.reply_text(reply_text)
 
     # OpenAI API call
     response = openai.ChatCompletion.create(
