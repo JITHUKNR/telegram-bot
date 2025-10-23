@@ -31,7 +31,7 @@ BOT_PERSONA = (
 # /start command
 # -------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hey baby girl😋💜")
+    await update.message.reply_text("Hey 😎, I’m JithuBot! Wanna chat with me? 😉")
 
 # -------------------------------
 # AI-powered auto reply
@@ -40,7 +40,7 @@ async def character_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
 
     try:
-        # OpenAI API call
+        # OpenAI API call with proper persona
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -51,7 +51,7 @@ async def character_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         reply_text = response.choices[0].message.content
 
-        # Logging
+        # Logging user messages
         user_id = update.message.from_user.id
         user_name = update.message.from_user.username
         logger.info(f"Message from {user_name} ({user_id}): {user_text}")
