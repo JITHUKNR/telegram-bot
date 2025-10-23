@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("ഹായ് ജിത്തു 😎 ഞാൻ Render വഴി ഓടുന്ന നിൻ്റെ ബോട്ടാണ്!")
+    await update.message.reply_text("𝐇𝐄𝐘 𝐁𝐀𝐁𝐘 𝐆𝐔𝐑𝐋🌚🍒")
 
 # Log all text messages safely
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
