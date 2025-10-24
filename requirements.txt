@@ -1,3 +1,5 @@
-pyTelegramBotAPI
-openai>=1.0.0
-python-dotenv
+# requirements.txt
+Flask
+python-telegram-bot
+openai
+gunicorn  # ഈ ലൈൻ ഇപ്പോൾ ചേർക്കുക
