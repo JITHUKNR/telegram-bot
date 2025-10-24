@@ -28,7 +28,10 @@ def handle(msg):
     )
 
     # Reply to user
-    bot.reply_to(msg, response.choices[0].message.content)
+    import time
+
+bot.reply_to(msg, response.choices[0].message.content)
+time.sleep(0.5)  # half-second delay
 
 # Start the bot
 bot.polling()
