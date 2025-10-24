@@ -1,79 +1,102 @@
 import os
 import logging
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from telegram import Bot, Update
-from openai import OpenAI
+import requests # <-- പുതിയ ലൈബ്രറി
 
-# ലോഗിംഗ് സജ്ജീകരണം (പിശകുകൾ പരിശോധിക്കാൻ ഇത് സഹായിക്കും)
+# ==============================================================================
+# ലോഗിംഗ് സജ്ജീകരണം
+# ==============================================================================
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 # ==============================================================================
 # 1. കീകൾ എടുക്കുന്നു
 # ==============================================================================
-# Render-ൽ നിങ്ങൾ സജ്ജമാക്കിയ Environment Variables-ൽ നിന്ന് കീകൾ എടുക്കുന്നു
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+# Render-ൽ നിങ്ങൾ സജ്ജമാക്കിയ പുതിയ കീ
+HUGGINGFACE_TOKEN = os.environ.get("HUGGINGFACE_TOKEN") 
 
 # ==============================================================================
-# 2. പ്രധാന ഒബ്ജക്റ്റുകൾ
+# 2. Hugging Face മോഡൽ സെറ്റ് ചെയ്യുക (ഇത് നിങ്ങൾ മാറ്റണം)
 # ==============================================================================
-app = Flask(__name__)  # Flask ആപ്ലിക്കേഷൻ ഒബ്ജക്റ്റ് (ഇതാണ് Procfile-ൽ app:app എന്ന് കൊടുക്കുന്നത്)
-client = OpenAI(api_key=OPENAI_API_KEY) 
+# ശ്രദ്ധിക്കുക: <MODEL_ID> എന്നതിന് പകരം നിങ്ങൾ ഇഷ്ടപ്പെടുന്ന ഒരു LLM-ൻ്റെ ID നൽകണം.
+# ഉദാഹരണത്തിന്: 'google/flan-t5-large' അല്ലെങ്കിൽ 'mistralai/Mistral-7B-Instruct-v0.2'
+MODEL_ID = "gpt2" # <-- പരീക്ഷണത്തിനായി gpt2 എന്ന ലളിതമായ മോഡൽ നൽകുന്നു. നിങ്ങൾക്ക് ഇഷ്ടമുള്ളത് മാറ്റാം.
+
+API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}" 
+HEADERS = {"Authorization": f"Bearer {HUGGINGFACE_TOKEN}"}
+
+# ==============================================================================
+# 3. പ്രധാന ഒബ്ജക്റ്റുകൾ
+# ==============================================================================
+app = Flask(__name__)
 bot = Bot(token=TELEGRAM_TOKEN)          
 
 # ==============================================================================
-# 3. AI ലോജിക് ഫംഗ്ഷൻ
+# 4. AI ലോജിക് ഫംഗ്ഷൻ (Hugging Face ഉപയോഗിച്ച്)
 # ==============================================================================
 def get_ai_response(prompt):
-    """ഒരു യൂസർ മെസ്സേജ് സ്വീകരിച്ച് OpenAI API-ലേക്ക് അയച്ച് മറുപടി നേടുന്നു."""
+    """യൂസർ മെസ്സേജ് Hugging Face Inference API-ലേക്ക് അയച്ച് മറുപടി നേടുന്നു."""
+    
     try:
-        response = client.chat.completions.create(
-            # നിങ്ങളുടെ ഇഷ്ടമുള്ള മോഡൽ ഉപയോഗിക്കാം
-            model="gpt-3.5-turbo", 
-            messages=[
-                {"role": "system", "content": "You are a helpful and friendly AI Telegram bot. Answer briefly and directly in a conversational style."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content
+        # ഒരു കഥാപാത്രത്തിൻ്റെ മറുപടി ലഭിക്കാൻ prompt-ൽ സിസ്റ്റം നിർദ്ദേശം ചേർക്കുന്നു
+        full_prompt = f"You are a helpful and friendly AI character. Respond to this message briefly: {prompt}"
+        
+        payload = {
+            "inputs": full_prompt,
+            "parameters": {
+                "max_new_tokens": 100, 
+                "temperature": 0.7, 
+                "return_full_text": False
+            }
+        }
+        
+        response = requests.post(API_URL, headers=HEADERS, json=payload)
+        
+        if response.status_code != 200:
+            # API-യിൽ പിശക് വന്നാൽ (ഉദാ: ടോക്കൺ തെറ്റ്, മോഡൽ ലഭ്യമല്ല)
+            logging.error(f"Hugging Face API Error: Status {response.status_code}, Response: {response.text}")
+            return f"Hugging Face Error (Status: {response.status_code}). Check your HUGGINGFACE_TOKEN or MODEL_ID."
+        
+        data = response.json()
+        
+        # ജനറേറ്റ് ചെയ്ത ടെക്സ്റ്റ് extract ചെയ്യുക
+        if data and isinstance(data, list) and 'generated_text' in data[0]:
+            return data[0]['generated_text'].strip()
+        else:
+            logging.error(f"AI response format error: {data}")
+            return "AI response format error."
+
     except Exception as e:
-        logging.error(f"AI API Error: {e}")
-        return "I apologize, but I encountered an error while contacting the AI service."
+        logging.error(f"Hugging Face API Exception: {e}")
+        return "I apologize, but I encountered a network error while contacting the AI service."
 
 # ==============================================================================
-# 4. വെബ്‌ഹുക്ക് റൂട്ട് (POST റിക്വസ്റ്റുകൾ ഇവിടെ സ്വീകരിക്കുന്നു)
+# 5. വെബ്‌ഹുക്ക് റൂട്ട് (POST റിക്വസ്റ്റുകൾ ഇവിടെ സ്വീകരിക്കുന്നു)
 # ==============================================================================
 @app.route('/webhook', methods=['POST'])
 def webhook():
     if request.method == "POST":
-        
         try:
-            # JSON ഡാറ്റയിൽ നിന്ന് ടെലിഗ്രാം അപ്‌ഡേറ്റ് ഉണ്ടാക്കുന്നു
             update = Update.de_json(request.get_json(force=True), bot)
             
-            # മെസ്സേജ് അപ്‌ഡേറ്റ് ആണെങ്കിൽ മാത്രം പ്രതികരിക്കുന്നു
             if update.message and update.message.text:
                 chat_id = update.message.chat.id
                 text = update.message.text
                 
-                # AI പ്രതികരണം നേടുക
                 ai_response = get_ai_response(text)
-                
-                # മറുപടി തിരികെ അയയ്ക്കുക
                 bot.send_message(chat_id=chat_id, text=ai_response)
             
         except Exception as e:
-            # പിശകുകൾ വന്നാൽ ലോഗിൽ രേഖപ്പെടുത്തും
             logging.error(f"Error processing update: {e}")
             pass
 
-        # ടെലിഗ്രാമിന് 200 OK മറുപടി നൽകുന്നു
     return "ok"
 
 # ==============================================================================
-# 5. ഹോം റൂട്ട് (ആരോഗ്യ പരിശോധനയ്ക്കായി)
+# 6. ഹോം റൂട്ട്
 # ==============================================================================
 @app.route('/')
 def index():
-    return "Bot is running on Render! (Health check passed)"
+    return "Telegram bot is running on Hugging Face API!"
