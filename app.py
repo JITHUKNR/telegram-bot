@@ -24,7 +24,7 @@ HUGGINGFACE_TOKEN = os.environ.get("HUGGINGFACE_TOKEN")
 # ഉദാഹരണത്തിന്: 'google/flan-t5-large' അല്ലെങ്കിൽ 'mistralai/Mistral-7B-Instruct-v0.2'
 MODEL_ID = "gpt2" # <-- പരീക്ഷണത്തിനായി gpt2 എന്ന ലളിതമായ മോഡൽ നൽകുന്നു. നിങ്ങൾക്ക് ഇഷ്ടമുള്ളത് മാറ്റാം.
 
-API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}" 
+API_URL = f"https://router.huggingface.co/hf-inference/{MODEL_ID}" 
 HEADERS = {"Authorization": f"Bearer {HUGGINGFACE_TOKEN}"}
 
 # ==============================================================================
