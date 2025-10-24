@@ -1,5 +1,5 @@
 # requirements.txt
 Flask
 python-telegram-bot
-openai
-gunicorn  # ഈ ലൈൻ ഇപ്പോൾ ചേർക്കുക
+requests # പുതിയ API കോളുകൾക്കായി ഇത് ചേർക്കുക
+gunicorn
