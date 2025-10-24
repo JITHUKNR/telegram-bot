@@ -1,8 +1,12 @@
+import os
 import openai
 from telebot import TeleBot
 
-bot = TeleBot("8077047057:AAGAN7hqalnJIdAW87_tx9nLBdqtc6Jdmr4")
-openai.api_key = "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"
+# Load OpenAI API key from environment variable
+openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+# Telegram Bot token from environment variable
+bot = TeleBot(os.environ.get("TELEGRAM_BOT_TOKEN"))
 
 @bot.message_handler(func=lambda msg: True)
 def handle(msg):
