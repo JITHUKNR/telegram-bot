@@ -33,19 +33,29 @@ except Exception as e:
 # ==============================================================================
 # 3. AI ലോജിക് ഫംഗ്ഷൻ (Gemini ഉപയോഗിച്ച്)
 # ==============================================================================
+def # app.py-യിലെ get_ai_response ഫംഗ്ഷൻ മാത്രം മാറ്റി ഈ കോഡ് ചേർക്കുക:
+
 def get_ai_response(prompt):
     """യൂസർ മെസ്സേജ് Gemini API-ലേക്ക് അയച്ച് മറുപടി നേടുന്നു."""
     try:
+        # Gemini-യുടെ response-ൽ സുരക്ഷാ പിശകുകൾ ഉണ്ടെങ്കിൽ അത് text നൽകില്ല.
         response = gemini_client.models.generate_content(
-            model='gemini-2.5-flash', # വേഗതയേറിയ മോഡൽ
+            model='gemini-2.5-flash',
             contents=[
                 "You are a helpful and friendly AI Telegram character. Respond briefly and engagingly to the user's message.",
                 prompt
             ]
         )
-        # മറുപടിയിൽ നിന്ന് ടെക്സ്റ്റ് മാത്രം എടുക്കുന്നു
-        return response.text.strip()
         
+        # ഇവിടെയാണ് പുതിയ സുരക്ഷാ പരിശോധന (New Safety Check)
+        if response.text:
+            # മറുപടിയിൽ ടെക്സ്റ്റ് ഉണ്ടെങ്കിൽ മാത്രം strip ചെയ്ത് നൽകുന്നു
+            return response.text.strip()
+        else:
+            # ടെക്സ്റ്റ് ഇല്ലെങ്കിൽ ഒരു പിശക് സന്ദേശം നൽകുന്നു
+            logging.warning("Gemini returned an empty response or was blocked by a safety filter.")
+            return "ക്ഷമിക്കണം, നിങ്ങളുടെ ചോദ്യത്തിന് മറുപടി ലഭ്യമല്ല. ദയവായി ചോദ്യം ലളിതമാക്കാമോ?"
+
     except APIError as e:
         logging.error(f"Gemini API Error: {e}")
         return f"Gemini API Error: Please check your API Key and usage limits."
@@ -57,6 +67,8 @@ def get_ai_response(prompt):
 # ==============================================================================
 # 4. വെബ്‌ഹുക്ക് റൂട്ട് (ബാക്കിയെല്ലാം മാറ്റമില്ല)
 # ==============================================================================
+# app.py, ഈ ഭാഗം മാത്രം മാറ്റി എഴുതുക (ഏകദേശം line 71 മുതൽ)
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     if request.method == "POST":
@@ -67,14 +79,22 @@ def webhook():
                 chat_id = update.message.chat.id
                 text = update.message.text
                 
+                # 1. AI പ്രതികരണം നേടുന്നു
                 ai_response = get_ai_response(text)
-                bot.send_message(chat_id=chat_id, text=ai_response)
+                
+                # 2. ടെലിഗ്രാമിലേക്ക് മറുപടി അയക്കുന്നു
+                try:
+                    bot.send_message(chat_id=chat_id, text=ai_response)
+                    logging.info(f"Successfully sent message to chat_id: {chat_id}") # വിജയം ലോഗ് ചെയ്യുന്നു
+                except Exception as send_error:
+                    logging.error(f"TELEGRAM SEND FAILED: {send_error}") # പരാജയം പ്രത്യേകം ലോഗ് ചെയ്യുന്നു
             
         except Exception as e:
-            logging.error(f"Error processing update: {e}")
+            logging.error(f"Error processing update (General): {e}")
             pass
             
     return "ok"
+
 
 # ==============================================================================
 # 5. ഹോം റൂട്ട്
