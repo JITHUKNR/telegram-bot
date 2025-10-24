@@ -1,31 +1,19 @@
-import telebot
-import random
-from telebot import types
+import openai
+from telebot import TeleBot
 
-BOT_TOKEN = "8077047057:AAGAN7hqalnJIdAW87_tx9nLBdqtc6Jdmr4"
-CHANNEL_USERNAME = "@taecockme"
+bot = TeleBot("8077047057:AAGAN7hqalnJIdAW87_tx9nLBdqtc6Jdmr4")
+openai.api_key = "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"
 
-bot = telebot.TeleBot(BOT_TOKEN)
+@bot.message_handler(func=lambda msg: True)
+def handle(msg):
+    user_msg = msg.text
+    response = openai.ChatCompletion.create(
+        model="gpt-5-mini",
+        messages=[
+            {"role": "system", "content": "You are Taekook from BTS, extremely flirty, playful, hot, full of emojis 🌚😏🔥💦💖👅💋😉✨😍💫."},
+            {"role": "user", "content": user_msg}
+        ]
+    )
+    bot.reply_to(msg, response.choices[0].message['content'])
 
-# /start command
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    # Normal Reply Keyboard Button
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(types.KeyboardButton("Send"))
-    bot.send_message(message.chat.id, "𝐇𝐄𝐘 𝐁𝐀𝐁𝐘 𝐆𝐔𝐑𝐋🌚🍒.", reply_markup=markup)
-
-# “Send” button clicked
-@bot.message_handler(func=lambda message: message.text == "Send")
-def send_random_media(message):
-    media_links = [
-        "https://t.me/taecockme/1",
-        "https://t.me/taecockme/2",
-        "https://t.me/taecockme/3",
-        "https://t.me/taecockme/4"
-    ]
-    selected = random.choice(media_links)
-    bot.send_message(message.chat.id, f"𝐔𝐇𝐌𝐌𝐌 :\n{selected}")
-
-print("Bot is running...")
-bot.infinity_polling()
+bot.polling()
