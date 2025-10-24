@@ -1,3 +1,3 @@
 pyTelegramBotAPI
-openai
-python-dotenv  # optional, for local testing
+openai>=1.0.0
+python-dotenv
