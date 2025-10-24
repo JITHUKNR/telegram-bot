@@ -1,5 +1,5 @@
 # requirements.txt
 Flask
 python-telegram-bot
-requests # പുതിയ API കോളുകൾക്കായി ഇത് ചേർക്കുക
+google-genai # <-- ഈ ലൈൻ ചേർത്തോ?
 gunicorn
