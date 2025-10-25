@@ -1,5 +1,5 @@
-# requirements.txt
-Flask
-python-telegram-bot
-google-genai # <-- ഈ ലൈൻ ചേർത്തോ?
-gunicorn
+python-telegram-bot==20.6
+httpx
+uvicorn
+google-genai
+python-dotenv
